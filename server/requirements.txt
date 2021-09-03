@@ -1,0 +1,5 @@
+aiohttp
+aiohttp[speedups]
+aiohttp_swagger
+uvloop
+aiopg
