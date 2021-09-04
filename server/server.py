@@ -71,7 +71,7 @@ async def delete(request):
             await cur.execute(
             """delete from objs 
             where obj_id = %s
-            RETURNING *;""",request.match_info['objId'])
+            RETURNING *;""",(request.match_info['objId'],))
             ret = {}
             async for row in cur:
                 for i in range(0,len(cur.description)):
