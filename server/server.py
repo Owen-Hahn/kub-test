@@ -5,6 +5,17 @@ import aiopg
 import asyncio
 import argparse
 import logging
+import decimal
+import json
+
+class SQLEncoder(json.JSONEncoder):
+    def default(self,obj):
+        if isinstance(obj,decimal.Decimal):
+            return float(obj)
+        return json.JSONEncoder.default(self, obj)
+
+def dump_from_sql(data):
+    return json.dumps(data, cls=SQLEncoder)
 
 loop = uvloop.new_event_loop()
 asyncio.set_event_loop(loop)
@@ -39,7 +50,7 @@ async def create(request):
             async for row in cur:
                 for i in range(0,len(cur.description)):
                     ret[cur.description[i].name] = row[i]
-            return web.json_response(ret)
+            return web.json_response(ret,dumps=dump_from_sql)
 
 async def read(request):
     async with request.app['database'].acquire() as conn:
@@ -47,12 +58,12 @@ async def read(request):
             await cur.execute(
                 """select * 
                 from objs 
-                where obj_id = %s""",request.match_info['objId'])
+                where obj_id = %s""",(request.match_info['objId'],))
             ret = {}
             async for row in cur:
                 for i in range(0,len(cur.description)):
                     ret[cur.description[i].name] = row[i]
-            return web.json_response(ret)
+            return web.json_response(ret,dumps=dump_from_sql)
 
 async def delete(request):
     async with request.app['database'].acquire() as conn:
@@ -65,7 +76,7 @@ async def delete(request):
             async for row in cur:
                 for i in range(0,len(cur.description)):
                     ret[cur.description[i].name] = row[i]
-            return web.json_response(ret)
+            return web.json_response(ret,dumps=dump_from_sql)
 
 async def on_shutdown(app):
     print('Shutting down')
